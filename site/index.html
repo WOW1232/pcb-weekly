@@ -124,7 +124,9 @@ function spark(vals){
 }
 
 async function loadPrice(){
-  const [hist,st]=await Promise.all([j('data/history.json'),j('data/status.json')]);
+  const [hist,st,cfg]=await Promise.all([j('data/history.json'),j('data/status.json'),j('data/companies.json')]);
+  const cfgShares=Object.fromEntries(((cfg&&cfg.companies)||[]).map(c=>[c.name.trim(),c.shares_k]));
+  const pending=[];
   if(!hist||!hist.length){document.getElementById('sub').textContent='데이터 없음';return}
   const cur=hist[hist.length-1], prev=hist[hist.length-2]||{items:[]};
   const pmap=Object.fromEntries(prev.items.map(x=>[x.name.trim(),x]));
@@ -150,6 +152,9 @@ async function loadPrice(){
     const p=pmap[it.name.trim()]; const diff=p&&p.close!=null&&it.close!=null?it.close-p.close:null;
     const sd=p&&p.shares_k!=null&&it.shares_k!=null?Math.round((it.shares_k-p.shares_k)*1000):0;
     if(sd) shareChanges.push({name:it.name.trim(),sd,before:p.shares_k,after:it.shares_k});
+    const nx=cfgShares[it.name.trim()]; const pd=(nx!=null&&it.shares_k!=null)?Math.round((nx-it.shares_k)*1000):0;
+    if(pd) pending.push({name:it.name.trim(),pd,after:nx});
+    const pdHtml=pd?`<div class="sd ${pd>0?'up':'down'}" title="다음 보고부터 ${fmt(nx,3)}천주 적용 (공시 게시판 참고)">→ ${fmt(nx,3)} (${pd>0?'+':''}${fmt(pd,0)}주)</div>`:'';
     const sdHtml=sd?`<div class="sd ${sd>0?'up':'down'}" title="지난주 ${fmt(p.shares_k,3)}천주 → 이번 주 ${fmt(it.shares_k,3)}천주 (공시 게시판 참고)">(${sd>0?'+':''}${fmt(sd,0)}주)</div>`:'';
     const pct=diff!=null?(it.close/p.close-1)*100:null; const cls=diff>0?'up':diff<0?'down':'';
     const dec=it.unit==='원'||it.unit==='엔'?0:2;
@@ -158,7 +163,7 @@ async function loadPrice(){
     html+=`<tr><td class="l"></td><td class="l">${it.name}</td><td>${fmt(it.close,dec)}</td><td class="l">${it.unit||''}</td>
       <td class="${cls}">${diff==null?'–':(diff>0?'▲':diff<0?'▼':'')+fmt(Math.abs(diff),dec)}</td>
       <td class="${cls}">${pct==null?'–':(pct>0?'+':'')+fmt(pct,2)}</td>
-      <td class="${sd?'schg':''}">${fmt(it.shares_k,3)}${sdHtml}</td><td>${fmt(it.mcap,0)}</td><td>${spark(series)}</td>
+      <td class="${sd||pd?'schg':''}">${fmt(it.shares_k,3)}${sdHtml}${pdHtml}</td><td>${fmt(it.mcap,0)}</td><td>${spark(series)}</td>
       <td class="l">${it.status?`<span class="badge b-${it.status}" title="${srcs}">${it.status}</span>`:''}</td></tr>`;
   }
   document.getElementById('tbl').innerHTML=html;
@@ -167,6 +172,10 @@ async function loadPrice(){
     shareChanges.map(c=>`${c.name} <b class="${c.sd>0?'up':'down'}">${c.sd>0?'+':''}${fmt(c.sd,0)}주</b>`).join(' · ')+
     ` <span class="muted">— 엑셀 H열(천주) 수정 필요</span></div>`:
     `<div class="banner ok">이번 주 주식수 변동 없음 (지난주와 동일)</div>`;
+  if(pending.length) document.getElementById('sharebox').innerHTML+=
+    `<div class="banner warn"><b>다음 보고부터 주식수 변경 예정 ${pending.length}건</b> (공식 주식수 점검 반영) · `+
+    pending.map(c=>`${c.name} <b class="${c.pd>0?'up':'down'}">${c.pd>0?'+':''}${fmt(c.pd,0)}주</b>`).join(' · ')+
+    ` <span class="muted">— 자세한 근거는 공시 게시판</span></div>`;
   const msg=document.getElementById('cp-msg');
   async function copy(text,label){
     try{await navigator.clipboard.writeText(text)}catch(e){

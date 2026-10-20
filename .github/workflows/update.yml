@@ -55,6 +55,9 @@ jobs:
           git config user.email "pcb-bot@users.noreply.github.com"
           git add -A site config backtest 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "자동 업데이트 $(TZ=Asia/Seoul date +%F_%H%M)" && git push)
+      - name: 사이트용 설정 복사
+        if: always() && github.ref == 'refs/heads/main'
+        run: cp config/companies.json site/data/companies.json
       - uses: actions/configure-pages@v5
         if: always() && github.ref == 'refs/heads/main'
       - uses: actions/upload-pages-artifact@v3
