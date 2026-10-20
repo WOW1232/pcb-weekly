@@ -33,6 +33,8 @@ th{background:#f0f2f5;font-weight:500;color:var(--muted);font-size:12px}
 td.l,th.l{text-align:left}
 tr.grp td{background:#fafbfc;font-weight:700;text-align:left;color:var(--accent)}
 .up{color:var(--up)} .down{color:var(--down)}
+.sd{font-size:11px;font-weight:700;line-height:1.2}
+td.schg{background:#fff8e6}
 .badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid}
 .b-확인{color:var(--ok);border-color:#b7dfc9}
 .b-단일출처{color:var(--warn);border-color:#f0d4a6}
@@ -67,9 +69,11 @@ details summary{cursor:pointer;color:var(--muted);font-size:12px}
 
   <section id="t-price">
     <div id="banner"></div>
+    <div id="sharebox"></div>
     <div class="card"><div class="fx" id="fx"></div>
       <div class="copybar">
         <button class="cbtn" id="cp-close">종가 22개 복사 (엑셀 D열 붙여넣기용)</button>
+        <button class="cbtn" id="cp-shares">주식수 22개 복사 (엑셀 H열 붙여넣기용)</button>
         <span class="muted" id="cp-msg"></span>
       </div></div>
     <div class="card tablewrap"><table id="tbl"></table>
@@ -139,11 +143,14 @@ async function loadPrice(){
     `<span class="muted">← 눌러서 하나씩 복사</span>`;
   const last12=hist.slice(-12);
   let html=`<tr><th class="l">구분</th><th class="l">회사명</th><th>종가</th><th class="l">단위</th><th>전주대비</th><th>등락률(%)</th><th>주식수(천주)</th><th>시가총액(억원)</th><th>12주 추이</th><th class="l">상태</th></tr>`;
-  let g='';
+  let g=''; const shareChanges=[];
   for(const it of cur.items){
     const gg=GROUP(it.name.trim());
     if(gg!==g){g=gg;html+=`<tr class="grp"><td colspan="10">${COUNTRY[g]}</td></tr>`}
     const p=pmap[it.name.trim()]; const diff=p&&p.close!=null&&it.close!=null?it.close-p.close:null;
+    const sd=p&&p.shares_k!=null&&it.shares_k!=null?Math.round((it.shares_k-p.shares_k)*1000):0;
+    if(sd) shareChanges.push({name:it.name.trim(),sd,before:p.shares_k,after:it.shares_k});
+    const sdHtml=sd?`<div class="sd ${sd>0?'up':'down'}" title="지난주 ${fmt(p.shares_k,3)}천주 → 이번 주 ${fmt(it.shares_k,3)}천주 (공시 게시판 참고)">(${sd>0?'+':''}${fmt(sd,0)}주)</div>`:'';
     const pct=diff!=null?(it.close/p.close-1)*100:null; const cls=diff>0?'up':diff<0?'down':'';
     const dec=it.unit==='원'||it.unit==='엔'?0:2;
     const series=last12.map(h=>(h.items.find(x=>x.name.trim()===it.name.trim())||{}).close);
@@ -151,10 +158,15 @@ async function loadPrice(){
     html+=`<tr><td class="l"></td><td class="l">${it.name}</td><td>${fmt(it.close,dec)}</td><td class="l">${it.unit||''}</td>
       <td class="${cls}">${diff==null?'–':(diff>0?'▲':diff<0?'▼':'')+fmt(Math.abs(diff),dec)}</td>
       <td class="${cls}">${pct==null?'–':(pct>0?'+':'')+fmt(pct,2)}</td>
-      <td>${fmt(it.shares_k,0)}</td><td>${fmt(it.mcap,0)}</td><td>${spark(series)}</td>
+      <td class="${sd?'schg':''}">${fmt(it.shares_k,3)}${sdHtml}</td><td>${fmt(it.mcap,0)}</td><td>${spark(series)}</td>
       <td class="l">${it.status?`<span class="badge b-${it.status}" title="${srcs}">${it.status}</span>`:''}</td></tr>`;
   }
   document.getElementById('tbl').innerHTML=html;
+  document.getElementById('sharebox').innerHTML=shareChanges.length?
+    `<div class="banner warn"><b>이번 주 주식수 변동 ${shareChanges.length}건</b> (지난주 대비) · `+
+    shareChanges.map(c=>`${c.name} <b class="${c.sd>0?'up':'down'}">${c.sd>0?'+':''}${fmt(c.sd,0)}주</b>`).join(' · ')+
+    ` <span class="muted">— 엑셀 H열(천주) 수정 필요</span></div>`:
+    `<div class="banner ok">이번 주 주식수 변동 없음 (지난주와 동일)</div>`;
   const msg=document.getElementById('cp-msg');
   async function copy(text,label){
     try{await navigator.clipboard.writeText(text)}catch(e){
@@ -162,6 +174,7 @@ async function loadPrice(){
     msg.textContent=`${label} 복사됨 (${cur.date}) – 엑셀 첫 칸 선택 후 붙여넣기`;
   }
   document.getElementById('cp-close').onclick=()=>copy(cur.items.map(x=>x.close??'').join('\n'),'종가 22개');
+  document.getElementById('cp-shares').onclick=()=>copy(cur.items.map(x=>x.shares_k??'').join('\n'),'주식수 22개');
   document.querySelectorAll('.fxv').forEach(el=>el.onclick=()=>copy(el.dataset.v,el.dataset.n+' 환율'));
 }
 
