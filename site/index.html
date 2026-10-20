@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PCB 동종업종 주가</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f7f9; --card:#fff; --ink:#1b1f24; --muted:#6b7380; --line:#e3e6ea;
+  --up:#d6323a; --down:#1f5fd1; --accent:#0f3d6e; --ok:#1a7f4b; --warn:#b26a00; --bad:#c62828;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Noto Sans KR",system-ui,sans-serif}
+header{background:var(--accent);color:#fff;padding:18px 16px}
+header .wrap{display:flex;gap:12px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:20px;margin:0}
+header .sub{opacity:.8;font-size:13px}
+.wrap{max-width:1180px;margin:0 auto}
+main{padding:16px}
+nav{display:flex;gap:4px;margin:0 0 14px;border-bottom:1px solid var(--line)}
+nav button{border:0;background:none;padding:10px 14px;font:inherit;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+nav button.on{color:var(--accent);border-color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px}
+.btn{display:inline-block;background:#fff;color:var(--accent);border-radius:6px;padding:8px 14px;text-decoration:none;font-weight:700}
+.banner{padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:13px}
+.banner.ok{background:#e8f5ee;color:var(--ok)} .banner.bad{background:#fdecec;color:var(--bad)} .banner.warn{background:#fff4e0;color:var(--warn)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:860px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{background:#f0f2f5;font-weight:500;color:var(--muted);font-size:12px}
+td.l,th.l{text-align:left}
+tr.grp td{background:#fafbfc;font-weight:700;text-align:left;color:var(--accent)}
+.up{color:var(--up)} .down{color:var(--down)}
+.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid}
+.b-확인{color:var(--ok);border-color:#b7dfc9}
+.b-단일출처{color:var(--warn);border-color:#f0d4a6}
+.b-불일치,.b-날짜확인,.b-실패{color:var(--bad);border-color:#f2bcbc}
+.muted{color:var(--muted);font-size:12px}
+.fx{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px}
+.post{border-bottom:1px solid var(--line);padding:12px 0}
+.post:last-child{border:0}
+.post h3{margin:0 0 4px;font-size:15px}
+.tag{display:inline-block;font-size:11px;background:#eef2f7;color:var(--accent);border-radius:4px;padding:1px 6px;margin-right:6px}
+.tag.imp{background:#fdecec;color:var(--bad)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+select,input{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.hidden{display:none}
+svg.spark{vertical-align:middle}
+details summary{cursor:pointer;color:var(--muted);font-size:12px}
+.copybar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.cbtn{font:inherit;font-size:13px;border:1px solid var(--accent);color:var(--accent);background:#fff;border-radius:6px;padding:6px 12px;cursor:pointer}
+.cbtn:hover{background:#eef2f7}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div><h1>PCB 동종업종 주가 및 시가총액</h1><div class="sub" id="sub">불러오는 중…</div></div>
+</div></header>
+<main class="wrap">
+  <nav>
+    <button class="on" data-tab="t-price">주가·시가총액</button>
+    <button data-tab="t-board">공시 게시판</button>
+    <button data-tab="t-info">안내</button>
+  </nav>
+
+  <section id="t-price">
+    <div id="banner"></div>
+    <div class="card"><div class="fx" id="fx"></div>
+      <div class="copybar">
+        <button class="cbtn" id="cp-close">종가 22개 복사 (엑셀 D열 붙여넣기용)</button>
+        <span class="muted" id="cp-msg"></span>
+      </div></div>
+    <div class="card tablewrap"><table id="tbl"></table>
+      <p class="muted">전주대비·등락률은 직전 주차 엑셀 종가 기준. 시가총액(억원)= 종가 × 주식수(천주) × 1000 ÷ 1억 × 환율. 상태: <span class="badge b-확인">확인</span> 두 곳 이상 일치 · <span class="badge b-단일출처">단일출처</span> 한 곳에서만 확인 · <span class="badge b-불일치">불일치</span> 출처 간 값이 다름(직접 확인 필요)</p>
+    </div>
+  </section>
+
+  <section id="t-board" class="hidden">
+    <div class="card">
+      <div class="filters">
+        <select id="f-co"><option value="">전체 기업</option></select>
+        <select id="f-type"><option value="">전체 유형</option></select>
+        <label class="muted"><input type="checkbox" id="f-imp"> 주식수 변동 관련만</label>
+      </div>
+      <div id="board"></div>
+    </div>
+  </section>
+
+  <section id="t-info" class="hidden">
+    <div class="card">
+      <h3>종가 확정 시각 (한국시간)</h3>
+      <table style="min-width:0">
+        <tr><th class="l">시장</th><th class="l">정규장 마감</th><th class="l">종가 확정</th><th class="l">수집 출처</th></tr>
+        <tr><td class="l">대만 (TWSE/TPEx)</td><td class="l">현지 13:30</td><td class="l">14:30</td><td class="l">대만증권거래소·TPEx 공식, Yahoo</td></tr>
+        <tr><td class="l">한국 (KRX)</td><td class="l">15:30</td><td class="l">15:30</td><td class="l">네이버(KRX 종가), Yahoo — 시간외/애프터마켓/NXT 가격 미사용</td></tr>
+        <tr><td class="l">일본 (TSE)</td><td class="l">15:30</td><td class="l">15:30</td><td class="l">Yahoo, Yahoo Japan</td></tr>
+        <tr><td class="l">중국 (상해/심천)</td><td class="l">현지 15:00</td><td class="l">16:00</td><td class="l">동방재부, Sina, Yahoo</td></tr>
+      </table>
+      <p><b>금요일 16:00</b> 1차 수집(한국·일본·대만 확정, 중국은 대기) → <b>금요일 16:30</b> 중국 포함 최종 확정·엑셀 반영. 금요일이 휴장이면 <b>목요일(그 주 마지막 거래일) 18:00</b>에 한 번에 처리합니다. 해외 시장이 그날 휴장이면 그 시장의 직전 거래일 종가를 씁니다. GitHub 예약 실행은 몇 분~십여 분 늦게 시작될 수 있습니다.</p><p><b>공시 게시판·주식수 점검</b>: 매주 목요일 18:00.</p>
+      <p>환율: 보고 전일 서울외국환중개 매매기준율 (엔은 1엔 기준으로 환산).</p>
+      <p>엑셀은 사이트에서 제공하지 않습니다. <b>종가 22개 복사</b> 버튼을 누른 뒤 회사 엑셀의 새 주차 첫 종목(심텍) D열 칸을 선택하고 붙여넣으면 순서대로 들어갑니다. 환율은 위쪽 환율 숫자를 하나씩 눌러 복사해 Ibiden·창장·Tripod 행 N열에 붙여넣으세요.</p>
+      <p class="muted">주식수 변경·건너뛸 주 지정은 GitHub 저장소의 <code>config/companies.json</code>, <code>config/calendar.json</code>에서 합니다.</p>
+    </div>
+  </section>
+</main>
+<script>
+const fmt=(v,d=0)=>v==null?'–':Number(v).toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const COUNTRY={KR:'국내',JP:'일본',CN:'중국',TW:'대만'};
+const GROUP=n=>({'Ibiden':'JP','NGK':'JP','Jiangsu Changjiang Elec.':'CN','TongFu Microelectronics Co.,Ltd':'CN','Tianshui Huatian Tech.':'CN'})[n]||(/[가-힣]/.test(n)?'KR':'TW');
+async function j(u){try{const r=await fetch(u+'?t='+Date.now());return r.ok?r.json():null}catch(e){return null}}
+
+function spark(vals){
+  const v=vals.filter(x=>x!=null); if(v.length<2) return '';
+  const w=70,h=18,mn=Math.min(...v),mx=Math.max(...v),rg=mx-mn||1;
+  const pts=v.map((x,i)=>`${(i/(v.length-1)*w).toFixed(1)},${(h-(x-mn)/rg*h).toFixed(1)}`).join(' ');
+  const c=v[v.length-1]>=v[0]?'var(--up)':'var(--down)';
+  return `<svg class="spark" width="${w}" height="${h}"><polyline fill="none" stroke="${c}" stroke-width="1.4" points="${pts}"/></svg>`;
+}
+
+async function loadPrice(){
+  const [hist,st]=await Promise.all([j('data/history.json'),j('data/status.json')]);
+  if(!hist||!hist.length){document.getElementById('sub').textContent='데이터 없음';return}
+  const cur=hist[hist.length-1], prev=hist[hist.length-2]||{items:[]};
+  const pmap=Object.fromEntries(prev.items.map(x=>[x.name.trim(),x]));
+  document.getElementById('sub').textContent=`기준일 ${cur.date} · 직전 ${prev.date||'-'}`;
+  const b=document.getElementById('banner');
+  if(st){
+    const cls=st.ok===false?'bad':st.ok===null?'warn':(cur.items.some(x=>x.status&&x.status!=='확인')?'warn':'ok');
+    const msg=st.ok===false?`⚠ 최근 실행(${st.run_at.replace('T',' ').slice(0,16)}) 수집 실패: ${st.message}`:
+      (st.message?`최근 실행 ${st.run_at.replace('T',' ').slice(0,16)} · ${st.message}`:`최근 확인 ${st.run_at.replace('T',' ').slice(0,16)}`);
+    b.innerHTML=`<div class="banner ${cls}">${msg}${cls==='warn'?' · 노란/빨간 표시 종목은 확인 필요':''}</div>`;
+  }
+  const fx={};cur.items.forEach(x=>{if(x.fx)fx[x.unit]=x.fx});
+  document.getElementById('fx').innerHTML=`<b>적용 환율</b>`+
+    Object.entries(fx).map(([u,v])=>{const n=u==='엔'?'JPY(1엔)':u==='NT$'?'TWD':u;
+      return `<button class="cbtn fxv" data-v="${v}" data-n="${n}" title="눌러서 복사">${n} <b>${fmt(v,4)}</b>원</button>`}).join('')+
+    `<span class="muted">← 눌러서 하나씩 복사</span>`;
+  const last12=hist.slice(-12);
+  let html=`<tr><th class="l">구분</th><th class="l">회사명</th><th>종가</th><th class="l">단위</th><th>전주대비</th><th>등락률(%)</th><th>주식수(천주)</th><th>시가총액(억원)</th><th>12주 추이</th><th class="l">상태</th></tr>`;
+  let g='';
+  for(const it of cur.items){
+    const gg=GROUP(it.name.trim());
+    if(gg!==g){g=gg;html+=`<tr class="grp"><td colspan="10">${COUNTRY[g]}</td></tr>`}
+    const p=pmap[it.name.trim()]; const diff=p&&p.close!=null&&it.close!=null?it.close-p.close:null;
+    const pct=diff!=null?(it.close/p.close-1)*100:null; const cls=diff>0?'up':diff<0?'down':'';
+    const dec=it.unit==='원'||it.unit==='엔'?0:2;
+    const series=last12.map(h=>(h.items.find(x=>x.name.trim()===it.name.trim())||{}).close);
+    const srcs=(it.sources||[]).map(s=>`${s.source}: ${s.close} (${s.date})`).join('\n');
+    html+=`<tr><td class="l"></td><td class="l">${it.name}</td><td>${fmt(it.close,dec)}</td><td class="l">${it.unit||''}</td>
+      <td class="${cls}">${diff==null?'–':(diff>0?'▲':diff<0?'▼':'')+fmt(Math.abs(diff),dec)}</td>
+      <td class="${cls}">${pct==null?'–':(pct>0?'+':'')+fmt(pct,2)}</td>
+      <td>${fmt(it.shares_k,0)}</td><td>${fmt(it.mcap,0)}</td><td>${spark(series)}</td>
+      <td class="l">${it.status?`<span class="badge b-${it.status}" title="${srcs}">${it.status}</span>`:''}</td></tr>`;
+  }
+  document.getElementById('tbl').innerHTML=html;
+  const msg=document.getElementById('cp-msg');
+  async function copy(text,label){
+    try{await navigator.clipboard.writeText(text)}catch(e){
+      const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}
+    msg.textContent=`${label} 복사됨 (${cur.date}) – 엑셀 첫 칸 선택 후 붙여넣기`;
+  }
+  document.getElementById('cp-close').onclick=()=>copy(cur.items.map(x=>x.close??'').join('\n'),'종가 22개');
+  document.querySelectorAll('.fxv').forEach(el=>el.onclick=()=>copy(el.dataset.v,el.dataset.n+' 환율'));
+}
+
+let POSTS=[];
+function renderBoard(){
+  const co=document.getElementById('f-co').value, ty=document.getElementById('f-type').value, imp=document.getElementById('f-imp').checked;
+  const list=POSTS.filter(p=>(!co||p.company===co)&&(!ty||p.type===ty)&&(!imp||p.shares_change));
+  document.getElementById('board').innerHTML=list.length?list.map(p=>`
+    <div class="post"><h3>${p.shares_change?'<span class="tag imp">주식수 변동</span>':''}<span class="tag">${p.company}</span>${p.title_ko||p.title}</h3>
+    <div class="muted">${p.date} · ${p.type||''} · <a href="${p.url}" target="_blank" rel="noopener">원문</a>${p.title_ko&&p.title?` · 원제: ${p.title}`:''}</div>
+    <p>${(p.summary_ko||'').replace(/\n/g,'<br>')}</p>
+    ${p.shares_change?`<p><b>주식수:</b> ${p.shares_change}</p>`:''}</div>`).join(''):'<p class="muted">게시물이 없습니다.</p>';
+}
+async function loadBoard(){
+  const d=await j('data/board.json'); POSTS=(d&&d.posts||[]).sort((a,b)=>b.date.localeCompare(a.date));
+  const cos=[...new Set(POSTS.map(p=>p.company))].sort(), tys=[...new Set(POSTS.map(p=>p.type).filter(Boolean))].sort();
+  document.getElementById('f-co').innerHTML+=cos.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('f-type').innerHTML+=tys.map(c=>`<option>${c}</option>`).join('');
+  ['f-co','f-type','f-imp'].forEach(id=>document.getElementById(id).onchange=renderBoard);
+  renderBoard();
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('main>section').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.tab));
+});
+loadPrice(); loadBoard();
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+name: 주간 종가 업데이트
+
+on:
+  schedule:
+    - cron: "0 7 * * 5"      # 금 16:00 (한국시간) – 1차 수집 (한·일·대만 확정, 중국 대기)
+    - cron: "30 7 * * 5"     # 금 16:30 – 중국 포함 최종 확정·수정
+    - cron: "0 9 * * 1-4"    # 월~목 18:00 – 그날이 그 주 마지막 거래일일 때만 실행(금요일 휴장 대비)
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "날짜 (YYYY-MM-DD, 비우면 오늘)"
+        required: false
+      mode:
+        description: "normal=보고일일 때만 / force=강제 추가 / backtest=기존 주차와 비교만"
+        required: true
+        default: normal
+        type: choice
+        options: [normal, force, backtest]
+  push:
+    paths: ["site/**", "config/**"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: 수집 및 엑셀 추가
+        if: github.event_name != 'push'
+        env:
+          ECOS_KEY: ${{ secrets.ECOS_KEY }}
+        run: |
+          ARGS=""
+          if [ -n "${{ inputs.date }}" ]; then ARGS="$ARGS --date ${{ inputs.date }}"; fi
+          if [ "${{ inputs.mode }}" = "force" ]; then ARGS="$ARGS --force"; fi
+          if [ "${{ inputs.mode }}" = "backtest" ]; then ARGS="$ARGS --backtest"; fi
+          python scripts/update.py $ARGS
+      - name: 변경사항 저장
+        if: always() && github.event_name != 'push'
+        run: |
+          git config user.name "pcb-bot"
+          git config user.email "pcb-bot@users.noreply.github.com"
+          git add -A site config backtest 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "자동 업데이트 $(TZ=Asia/Seoul date +%F_%H%M)" && git push)
+      - uses: actions/configure-pages@v5
+        if: always() && github.ref == 'refs/heads/main'
+      - uses: actions/upload-pages-artifact@v3
+        if: always() && github.ref == 'refs/heads/main'
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
+        if: always() && github.ref == 'refs/heads/main'

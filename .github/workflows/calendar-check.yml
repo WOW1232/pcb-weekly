@@ -1,0 +1,24 @@
+name: 휴장일 점검
+on: workflow_dispatch
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements.txt
+      - run: |
+          cd scripts && python - <<'PY'
+          import update, datetime as dt
+          cfg = update.load_json('../config/calendar.json')
+          d = dt.date(2026, 9, 1)
+          while d <= dt.date(2027, 3, 31):
+              ok, why = update.is_report_day(d, cfg)
+              if ok: print("보고일", d, d.strftime("%a"), why)
+              d += dt.timedelta(days=1)
+          for c in ["KR", "JP", "CN", "TW"]:
+              cl = update.cal(c)
+              hol = [str(x.date()) for x in cl.regular_holidays.holidays(dt.date(2026,9,1), dt.date(2027,3,31))] if cl.regular_holidays else []
+              print(c, "휴장:", hol, "adhoc:", [str(x.date()) for x in cl.adhoc_holidays if x.year >= 2026])
+          PY

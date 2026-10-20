@@ -1,0 +1,3 @@
+requests>=2.31
+yfinance>=0.2.54
+exchange_calendars>=4.8

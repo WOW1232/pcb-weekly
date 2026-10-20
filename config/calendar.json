@@ -1,0 +1,6 @@
+{
+  "_설명": "skip_dates: 이 날짜에는 보고서를 만들지 않음(예: 그 주는 건너뛰기). force_dates: 원래 보고일이 아니어도 이 날짜에 보고서를 만듦. extra_kr_holidays: 달력 라이브러리에 아직 반영 안 된 임시 휴장일(한국).",
+  "skip_dates": ["2026-10-02"],
+  "force_dates": [],
+  "extra_kr_holidays": []
+}
