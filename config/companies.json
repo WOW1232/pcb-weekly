@@ -17,7 +17,7 @@
     {"name": "Jiangsu Changjiang Elec.", "country": "CN", "code": "sh600584", "yahoo": "600584.SS", "shares_k": 1789414.57},
     {"name": "TongFu Microelectronics Co.,Ltd", "country": "CN", "code": "sz002156", "yahoo": "002156.SZ", "shares_k": 1593797.706},
     {"name": "Tianshui Huatian Tech.", "country": "CN", "code": "sz002185", "yahoo": "002185.SZ", "shares_k": 3326757.908},
-    {"name": "Tripod", "country": "TW", "code": "3044", "board": "TWSE", "yahoo": "3044.TW", "shares_k": 525605.898},
+    {"name": "Tripod", "country": "TW", "code": "3044", "board": "TWSE", "yahoo": "3044.TW", "shares_k": null},
     {"name": "ASE Technology Holdings", "country": "TW", "code": "3711", "board": "TWSE", "yahoo": "3711.TW", "shares_k": 4470572.282},
     {"name": "KINSUS", "country": "TW", "code": "3189", "board": "TWSE", "yahoo": "3189.TW", "shares_k": 526910.36},
     {"name": "Unimicron", "country": "TW", "code": "3037", "board": "TWSE", "yahoo": "3037.TW", "shares_k": 1641291.596},

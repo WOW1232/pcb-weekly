@@ -235,12 +235,15 @@ def main():
     prev = [h for h in hist if h["date"] < day.isoformat()]
     prev_items = {x["name"].strip(): x for x in (prev[-1]["items"] if prev else [])}
     old = by_date.get(day.isoformat())
+    # 국내는 KIND 공시로 자동 갱신되는 주식수 연혁의 현재값을 사용
+    sh_hist = {x["name"]: x for x in (load_json(SITE_DATA / "shares_history.json", {}) or {}).get("companies", [])}
     rows = []
     for c, r in zip(comps, results):
         p = prev_items.get(c["name"], {})
         unit = p.get("unit")
+        kr_now = sh_hist.get(c["name"], {}).get("current") if c["country"] == "KR" else None
         rows.append({"name": c["name"], "unit": unit, "close": r["close"],
-                     "shares_k": c.get("shares_k") or p.get("shares_k"),
+                     "shares_k": c.get("shares_k") or (kr_now / 1000 if kr_now else None) or p.get("shares_k"),
                      "fx": fx["rates"].get(UNIT_FX.get(unit)) if unit in UNIT_FX else None, "mcap": None})
     week = block_to_week(day.isoformat(), rows, {r["name"]: r for r in results})
     week["fx_date"] = fx["date"]

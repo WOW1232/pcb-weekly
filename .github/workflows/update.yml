@@ -38,7 +38,11 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: 수집 및 엑셀 추가
+      - name: 국내 주식수 공시 확인(KIND)
+        if: github.event_name != 'push'
+        continue-on-error: true
+        run: python scripts/kr_shares.py
+      - name: 종가 수집
         if: github.event_name != 'push'
         env:
           ECOS_KEY: ${{ secrets.ECOS_KEY }}

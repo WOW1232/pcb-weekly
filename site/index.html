@@ -63,6 +63,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:12px}
 <main class="wrap">
   <nav>
     <button class="on" data-tab="t-price">주가·시가총액</button>
+    <button data-tab="t-shares">주식수 연혁</button>
     <button data-tab="t-board">공시 게시판</button>
     <button data-tab="t-info">안내</button>
   </nav>
@@ -79,6 +80,19 @@ details summary{cursor:pointer;color:var(--muted);font-size:12px}
     <div class="card tablewrap"><table id="tbl"></table>
       <p class="muted">전주대비·등락률은 직전 주차 엑셀 종가 기준. 시가총액(억원)= 종가 × 주식수(천주) × 1000 ÷ 1억 × 환율. 상태: <span class="badge b-확인">확인</span> 두 곳 이상 일치 · <span class="badge b-단일출처">단일출처</span> 한 곳에서만 확인 · <span class="badge b-불일치">불일치</span> 출처 간 값이 다름(직접 확인 필요)</p>
     </div>
+  </section>
+
+  <section id="t-shares" class="hidden">
+    <div class="card">
+      <div class="filters">
+        <select id="sh-cty"><option value="">전체 국가</option><option value="KR">국내</option><option value="JP">일본</option><option value="CN">중국</option><option value="TW">대만</option></select>
+        <label class="muted"><input type="checkbox" id="sh-diff"> 엑셀 값과 다른 회사만</label>
+        <span class="muted" id="sh-upd"></span>
+      </div>
+      <div class="tablewrap"><table id="sh-sum"></table></div>
+      <p class="muted">차이 = 현재 공식 발행주식수 − 엑셀 값. 국내는 KRX 상장주식수, 일본은 발행주식총수(자기주식 포함), 중국은 총주식수(总股本), 대만은 발행보통주식수 기준.</p>
+    </div>
+    <div id="sh-cards"></div>
   </section>
 
   <section id="t-board" class="hidden">
@@ -209,7 +223,45 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
   document.querySelectorAll('main>section').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.tab));
 });
-loadPrice(); loadBoard();
+let SH=null;
+const CTY={KR:'국내',JP:'일본',CN:'중국',TW:'대만'};
+const ymd=d=>d?d.slice(0,7).replace('-','.'):'';
+function sgn(v){return v==null?'':`<b class="${v>0?'up':v<0?'down':''}">${v>0?'+':''}${fmt(v,0)}주</b>`}
+function renderShares(){
+  if(!SH) return;
+  const cty=document.getElementById('sh-cty').value, only=document.getElementById('sh-diff').checked;
+  const list=SH.companies.filter(c=>(!cty||c.country===cty)&&(!only||(Math.abs(Math.round(c.current-c.excel_value*1000))>=1000||(!/반올림/.test(c.excel_basis)&&Math.round(c.current-c.excel_value*1000)!==0))));
+  let t=`<tr><th class="l">국가</th><th class="l">회사</th><th>엑셀 값(천주)</th><th class="l">엑셀 반영</th><th>현재 공식(주)</th><th>차이</th><th class="l">엑셀 값 기준 시점</th></tr>`;
+  for(const c of list){
+    let d=Math.round(c.current-c.excel_value*1000); if(Math.abs(d)<1000&&/반올림/.test(c.excel_basis)) d=0;
+    t+=`<tr><td class="l">${CTY[c.country]}</td><td class="l"><a href="#sh-${encodeURIComponent(c.name)}">${c.name}</a></td><td>${fmt(c.excel_value,3)}</td><td class="l">${ymd(c.excel_since)}</td>
+      <td>${fmt(c.current,0)}</td><td class="${d?'schg':''}">${d?sgn(d):'<span class="muted">일치</span>'}</td><td class="l muted">${c.excel_basis}</td></tr>`;
+  }
+  document.getElementById('sh-sum').innerHTML=t;
+  document.getElementById('sh-cards').innerHTML=list.map(c=>{
+    const ev=[...c.events].sort((a,b)=>b.date.localeCompare(a.date));
+    const rows=ev.length?ev.map(e=>`<tr><td class="l">${ymd(e.date)}</td><td class="l">${e.type}${e.count>1?` <span class="muted">(${e.count}건)</span>`:''}</td>
+        <td>${e.change==null?'<span class="muted">수량 미확인</span>':sgn(e.change)}</td><td>${e.after?fmt(e.after,0):''}</td>
+        <td class="l muted">${e.memo||''}${e.source?` <a href="${e.source}" target="_blank" rel="noopener">원문</a>`:''}</td></tr>`).join('')
+      :'<tr><td class="l muted" colspan="5">최근 변동 내역 없음</td></tr>';
+    const txt=`${c.name}: `+(ev.length?[...c.events].sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`${ymd(e.date)} ${e.type}${e.change!=null?` ${e.change>0?'+':''}${e.change.toLocaleString('ko-KR')}주`:''}`).join(', '):'변동 없음')+` (현재 ${c.current.toLocaleString('ko-KR')}주)`;
+    return `<div class="card" id="sh-${encodeURIComponent(c.name)}">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">
+        <h3 style="margin:0;font-size:16px">${c.name} <span class="tag">${CTY[c.country]}</span></h3>
+        <button class="cbtn sh-copy" data-t="${txt.replace(/"/g,'&quot;')}">보고용 문구 복사</button></div>
+      <p class="muted" style="margin:6px 0">현재 ${fmt(c.current,0)}주 (${c.current_source}) · 엑셀 ${fmt(c.excel_value,3)}천주 (${ymd(c.excel_since)} 반영, ${c.excel_basis})${c.note?'<br>'+c.note:''}</p>
+      <div class="tablewrap"><table style="min-width:640px"><tr><th class="l">연월</th><th class="l">내용</th><th>변동 주식수</th><th>변동 후 주식수</th><th class="l">비고</th></tr>${rows}</table></div></div>`;}).join('');
+  document.querySelectorAll('.sh-copy').forEach(b=>b.onclick=async()=>{
+    try{await navigator.clipboard.writeText(b.dataset.t)}catch(e){}
+    b.textContent='복사됨'; setTimeout(()=>b.textContent='보고용 문구 복사',1500);});
+}
+async function loadShares(){
+  SH=await j('data/shares_history.json'); if(!SH) return;
+  document.getElementById('sh-upd').textContent=`최종 갱신 ${SH.updated.replace('T',' ').slice(0,16)}`;
+  ['sh-cty','sh-diff'].forEach(id=>document.getElementById(id).onchange=renderShares);
+  renderShares();
+}
+loadPrice(); loadBoard(); loadShares();
 </script>
 </body>
 </html>
