@@ -78,7 +78,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:12px}
         <span class="muted" id="cp-msg"></span>
       </div></div>
     <div class="card tablewrap"><table id="tbl"></table>
-      <p class="muted">전주대비·등락률은 직전 주차 엑셀 종가 기준. 시가총액(억원)= 종가 × 주식수(천주) × 1000 ÷ 1억 × 환율. 상태: <span class="badge b-확인">확인</span> 두 곳 이상 일치 · <span class="badge b-단일출처">단일출처</span> 한 곳에서만 확인 · <span class="badge b-불일치">불일치</span> 출처 간 값이 다름(직접 확인 필요)</p>
+      <p class="muted">전주대비·등락률은 직전 주차 엑셀 종가 기준. 시가총액(억원)= 종가 × 주식수(천주) × 1000 ÷ 1억 × 환율.</p>
     </div>
   </section>
 
@@ -150,7 +150,7 @@ async function loadPrice(){
     const cls=st.ok===false?'bad':st.ok===null?'warn':(cur.items.some(x=>x.status&&x.status!=='확인')?'warn':'ok');
     const msg=st.ok===false?`⚠ 최근 실행(${st.run_at.replace('T',' ').slice(0,16)}) 수집 실패: ${st.message}`:
       (st.message?`최근 실행 ${st.run_at.replace('T',' ').slice(0,16)} · ${st.message}`:`최근 확인 ${st.run_at.replace('T',' ').slice(0,16)}`);
-    b.innerHTML=`<div class="banner ${cls}">${msg}${cls==='warn'?' · 노란/빨간 표시 종목은 확인 필요':''}</div>`;
+    b.innerHTML=`<div class="banner ${cls}">${msg}${cls==='warn'?'':''}</div>`;
   }
   const fx={};cur.items.forEach(x=>{if(x.fx)fx[x.unit]=x.fx});
   document.getElementById('fx').innerHTML=`<b>적용 환율</b>`+
@@ -158,11 +158,11 @@ async function loadPrice(){
       return `<button class="cbtn fxv" data-v="${v}" data-n="${n}" title="눌러서 복사">${n} <b>${fmt(v,4)}</b>원</button>`}).join('')+
     `<span class="muted">← 눌러서 하나씩 복사</span>`;
   const last12=hist.slice(-12);
-  let html=`<tr><th class="l">구분</th><th class="l">회사명</th><th>종가</th><th class="l">단위</th><th>전주대비</th><th>등락률(%)</th><th>주식수(천주)</th><th>시가총액(억원)</th><th>12주 추이</th><th class="l">상태</th></tr>`;
+  let html=`<tr><th class="l">구분</th><th class="l">회사명</th><th>종가</th><th class="l">단위</th><th>전주대비</th><th>등락률(%)</th><th>주식수(천주)</th><th>시가총액(억원)</th></tr>`;
   let g=''; const shareChanges=[];
   for(const it of cur.items){
     const gg=GROUP(it.name.trim());
-    if(gg!==g){g=gg;html+=`<tr class="grp"><td colspan="10">${COUNTRY[g]}</td></tr>`}
+    if(gg!==g){g=gg;html+=`<tr class="grp"><td colspan="8">${COUNTRY[g]}</td></tr>`}
     const p=pmap[it.name.trim()]; const diff=p&&p.close!=null&&it.close!=null?it.close-p.close:null;
     const sd=p&&p.shares_k!=null&&it.shares_k!=null?Math.round((it.shares_k-p.shares_k)*1000):0;
     if(sd) shareChanges.push({name:it.name.trim(),sd,before:p.shares_k,after:it.shares_k});
@@ -177,8 +177,7 @@ async function loadPrice(){
     html+=`<tr><td class="l"></td><td class="l">${it.name}</td><td>${fmt(it.close,dec)}</td><td class="l">${it.unit||''}</td>
       <td class="${cls}">${diff==null?'–':(diff>0?'▲':diff<0?'▼':'')+fmt(Math.abs(diff),dec)}</td>
       <td class="${cls}">${pct==null?'–':(pct>0?'+':'')+fmt(pct,2)}</td>
-      <td class="${sd||pd?'schg':''}">${fmt(it.shares_k,3)}${sdHtml}${pdHtml}</td><td>${fmt(it.mcap,0)}</td><td>${spark(series)}</td>
-      <td class="l">${it.status?`<span class="badge b-${it.status}" title="${srcs}">${it.status}</span>`:''}</td></tr>`;
+      <td class="${sd||pd?'schg':''}">${fmt(it.shares_k,3)}${sdHtml}${pdHtml}</td><td>${fmt(it.mcap,0)}</td></tr>`;
   }
   document.getElementById('tbl').innerHTML=html;
   document.getElementById('sharebox').innerHTML=shareChanges.length?
