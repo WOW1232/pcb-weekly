@@ -62,9 +62,8 @@ details summary{cursor:pointer;color:var(--muted);font-size:12px}
 </div></header>
 <main class="wrap">
   <nav>
-    <button class="on" data-tab="t-price">주가·시가총액</button>
+    <button class="on" data-tab="t-price">주간 주가·시가총액</button>
     <button data-tab="t-shares">주식수 연혁</button>
-    <button data-tab="t-board">공시 게시판</button>
     <button data-tab="t-info">안내</button>
   </nav>
 
@@ -95,17 +94,6 @@ details summary{cursor:pointer;color:var(--muted);font-size:12px}
     <div id="sh-cards"></div>
   </section>
 
-  <section id="t-board" class="hidden">
-    <div class="card">
-      <div class="filters">
-        <select id="f-co"><option value="">전체 기업</option></select>
-        <select id="f-type"><option value="">전체 유형</option></select>
-        <label class="muted"><input type="checkbox" id="f-imp"> 주식수 변동 관련만</label>
-      </div>
-      <div id="board"></div>
-    </div>
-  </section>
-
   <section id="t-info" class="hidden">
     <div class="card">
       <h3>종가 확정 시각 (한국시간)</h3>
@@ -116,7 +104,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:12px}
         <tr><td class="l">일본 (TSE)</td><td class="l">15:30</td><td class="l">15:30</td><td class="l">Yahoo, Yahoo Japan</td></tr>
         <tr><td class="l">중국 (상해/심천)</td><td class="l">현지 15:00</td><td class="l">16:00</td><td class="l">동방재부, Sina, Yahoo</td></tr>
       </table>
-      <p><b>금요일 16:00</b> 1차 수집(한국·일본·대만 확정, 중국은 대기) → <b>금요일 16:30</b> 중국 포함 최종 확정·엑셀 반영. 금요일이 휴장이면 <b>목요일(그 주 마지막 거래일) 18:00</b>에 한 번에 처리합니다. 해외 시장이 그날 휴장이면 그 시장의 직전 거래일 종가를 씁니다. GitHub 예약 실행은 몇 분~십여 분 늦게 시작될 수 있습니다.</p><p><b>공시 게시판·주식수 점검</b>: 매주 목요일 18:00.</p>
+      <p><b>금요일 16:00</b> 1차 수집(한국·일본·대만 확정, 중국은 대기) → <b>금요일 16:30</b> 중국 포함 최종 확정·엑셀 반영. 금요일이 휴장이면 <b>목요일(그 주 마지막 거래일) 18:00</b>에 한 번에 처리합니다. 해외 시장이 그날 휴장이면 그 시장의 직전 거래일 종가를 씁니다. GitHub 예약 실행은 몇 분~십여 분 늦게 시작될 수 있습니다.</p><p><b>주식수 연혁 점검</b>: 매주 목요일 18:00 (국내는 매 실행 때 KIND 공시 자동 반영).</p>
       <p>환율: 보고 전일 서울외국환중개 매매기준율 (엔은 1엔 기준으로 환산).</p>
       <p>엑셀은 사이트에서 제공하지 않습니다. <b>종가 22개 복사</b> 버튼을 누른 뒤 회사 엑셀의 새 주차 첫 종목(심텍) D열 칸을 선택하고 붙여넣으면 순서대로 들어갑니다. 환율은 위쪽 환율 숫자를 하나씩 눌러 복사해 Ibiden·창장·Tripod 행 N열에 붙여넣으세요.</p>
       <p class="muted">주식수 변경·건너뛸 주 지정은 GitHub 저장소의 <code>config/companies.json</code>, <code>config/calendar.json</code>에서 합니다.</p>
@@ -168,8 +156,8 @@ async function loadPrice(){
     if(sd) shareChanges.push({name:it.name.trim(),sd,before:p.shares_k,after:it.shares_k});
     const nx=cfgShares[it.name.trim()]; const pd=(nx!=null&&it.shares_k!=null)?Math.round((nx-it.shares_k)*1000):0;
     if(pd) pending.push({name:it.name.trim(),pd,after:nx});
-    const pdHtml=pd?`<div class="sd ${pd>0?'up':'down'}" title="다음 보고부터 ${fmt(nx,3)}천주 적용 (공시 게시판 참고)">→ ${fmt(nx,3)} (${pd>0?'+':''}${fmt(pd,0)}주)</div>`:'';
-    const sdHtml=sd?`<div class="sd ${sd>0?'up':'down'}" title="지난주 ${fmt(p.shares_k,3)}천주 → 이번 주 ${fmt(it.shares_k,3)}천주 (공시 게시판 참고)">(${sd>0?'+':''}${fmt(sd,0)}주)</div>`:'';
+    const pdHtml=pd?`<div class="sd ${pd>0?'up':'down'}" title="다음 보고부터 ${fmt(nx,3)}천주 적용 (주식수 연혁 탭 참고)">→ ${fmt(nx,3)} (${pd>0?'+':''}${fmt(pd,0)}주)</div>`:'';
+    const sdHtml=sd?`<div class="sd ${sd>0?'up':'down'}" title="지난주 ${fmt(p.shares_k,3)}천주 → 이번 주 ${fmt(it.shares_k,3)}천주 (주식수 연혁 탭 참고)">(${sd>0?'+':''}${fmt(sd,0)}주)</div>`:'';
     const pct=diff!=null?(it.close/p.close-1)*100:null; const cls=diff>0?'up':diff<0?'down':'';
     const dec=it.unit==='원'||it.unit==='엔'?0:2;
     const series=last12.map(h=>(h.items.find(x=>x.name.trim()===it.name.trim())||{}).close);
@@ -188,7 +176,7 @@ async function loadPrice(){
   if(pending.length) document.getElementById('sharebox').innerHTML+=
     `<div class="banner warn"><b>다음 보고부터 주식수 변경 예정 ${pending.length}건</b> (공식 주식수 점검 반영) · `+
     pending.map(c=>`${c.name} <b class="${c.pd>0?'up':'down'}">${c.pd>0?'+':''}${fmt(c.pd,0)}주</b>`).join(' · ')+
-    ` <span class="muted">— 자세한 근거는 공시 게시판</span></div>`;
+    ` <span class="muted">— 사유는 주식수 연혁 탭</span></div>`;
   const msg=document.getElementById('cp-msg');
   async function copy(text,label){
     try{await navigator.clipboard.writeText(text)}catch(e){
@@ -200,28 +188,6 @@ async function loadPrice(){
   document.querySelectorAll('.fxv').forEach(el=>el.onclick=()=>copy(el.dataset.v,el.dataset.n+' 환율'));
 }
 
-let POSTS=[];
-function renderBoard(){
-  const co=document.getElementById('f-co').value, ty=document.getElementById('f-type').value, imp=document.getElementById('f-imp').checked;
-  const list=POSTS.filter(p=>(!co||p.company===co)&&(!ty||p.type===ty)&&(!imp||p.shares_change));
-  document.getElementById('board').innerHTML=list.length?list.map(p=>`
-    <div class="post"><h3>${p.shares_change?'<span class="tag imp">주식수 변동</span>':''}<span class="tag">${p.company}</span>${p.title_ko||p.title}</h3>
-    <div class="muted">${p.date} · ${p.type||''} · <a href="${p.url}" target="_blank" rel="noopener">원문</a>${p.title_ko&&p.title?` · 원제: ${p.title}`:''}</div>
-    <p>${(p.summary_ko||'').replace(/\n/g,'<br>')}</p>
-    ${p.shares_change?`<p><b>주식수:</b> ${p.shares_change}</p>`:''}</div>`).join(''):'<p class="muted">게시물이 없습니다.</p>';
-}
-async function loadBoard(){
-  const d=await j('data/board.json'); POSTS=(d&&d.posts||[]).sort((a,b)=>b.date.localeCompare(a.date));
-  const cos=[...new Set(POSTS.map(p=>p.company))].sort(), tys=[...new Set(POSTS.map(p=>p.type).filter(Boolean))].sort();
-  document.getElementById('f-co').innerHTML+=cos.map(c=>`<option>${c}</option>`).join('');
-  document.getElementById('f-type').innerHTML+=tys.map(c=>`<option>${c}</option>`).join('');
-  ['f-co','f-type','f-imp'].forEach(id=>document.getElementById(id).onchange=renderBoard);
-  renderBoard();
-}
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
-  document.querySelectorAll('main>section').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.tab));
-});
 let SH=null;
 const CTY={KR:'국내',JP:'일본',CN:'중국',TW:'대만'};
 const ymd=d=>d?d.slice(0,7).replace('-','.'):'';
@@ -259,7 +225,7 @@ async function loadShares(){
   ['sh-cty','sh-diff'].forEach(id=>document.getElementById(id).onchange=renderShares);
   renderShares();
 }
-loadPrice(); loadBoard(); loadShares();
+loadPrice(); loadShares();
 </script>
 </body>
 </html>
