@@ -188,6 +188,10 @@ async function loadPrice(){
   document.querySelectorAll('.fxv').forEach(el=>el.onclick=()=>copy(el.dataset.v,el.dataset.n+' 환율'));
 }
 
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('main>section').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.tab));
+});
 let SH=null;
 const CTY={KR:'국내',JP:'일본',CN:'중국',TW:'대만'};
 const ymd=d=>d?d.slice(0,7).replace('-','.'):'';
