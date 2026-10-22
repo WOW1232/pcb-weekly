@@ -1,5 +1,5 @@
 {
-  "_설명": "name은 엑셀 C열 회사명과 같아야 합니다. shares_k(주식수, 천주)가 null이면 직전 주 값을 그대로 씁니다. 2026-10-20 공식 주식수 점검 결과 반영.",
+  "_설명": "name은 엑셀 C열 회사명과 같아야 합니다. shares_k(주식수, 천주)가 null이면 직전 주 값을 그대로 씁니다. 2026-10-22 공식 주식수 점검 결과 반영.",
   "companies": [
     {"name": "심텍", "country": "KR", "code": "222800", "yahoo": "222800.KQ", "shares_k": null},
     {"name": "심텍홀딩스", "country": "KR", "code": "036710", "yahoo": "036710.KQ", "shares_k": null},
@@ -12,7 +12,7 @@
     {"name": "인터플렉스", "country": "KR", "code": "051370", "yahoo": "051370.KQ", "shares_k": null},
     {"name": "티엘비", "country": "KR", "code": "356860", "yahoo": "356860.KQ", "shares_k": null},
     {"name": "해성디에스", "country": "KR", "code": "195870", "yahoo": "195870.KS", "shares_k": null},
-    {"name": "Ibiden", "country": "JP", "code": "4062", "yahoo": "4062.T", "shares_k": 567325.239},
+    {"name": "Ibiden", "country": "JP", "code": "4062", "yahoo": "4062.T", "shares_k": 567387.652},
     {"name": "NGK", "country": "JP", "code": "5334", "yahoo": "5334.T", "shares_k": null},
     {"name": "Jiangsu Changjiang Elec.", "country": "CN", "code": "sh600584", "yahoo": "600584.SS", "shares_k": 1789414.57},
     {"name": "TongFu Microelectronics Co.,Ltd", "country": "CN", "code": "sz002156", "yahoo": "002156.SZ", "shares_k": 1593797.706},

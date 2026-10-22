@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-20T19:00:00+09:00",
+ "updated": "2026-10-22T18:00:00+09:00",
  "note": "변동 내역: 국내=KIND 추가/변경상장 공시, 중국=시나 股本结构, 대만=거래소·부본증권 股本形成·뉴스, 일본=거래소 적시공시·닛케이",
  "companies": [
   {
@@ -397,8 +397,8 @@
   {
    "name": "Ibiden",
    "country": "JP",
-   "current": 567325239,
-   "current_source": "닛케이 発行済株式数(자기주식 포함)",
+   "current": 567387652,
+   "current_source": "회사 IR 発行済株式の総数(2026.10.01 현재, 자기주식 포함)",
    "excel_value": 567260.0,
    "excel_since": "2026-10-08",
    "excel_basis": "근사치(정확한 일치 시점 없음)",
@@ -422,9 +422,9 @@
      "date": "2026-10-01",
      "type": "주식분할 1:2",
      "change": null,
-     "after": 567325239,
-     "source": "https://filingreader.com/news-wire/tokyo/2026-08-04/ibiden-upgrades-forecasts-and-announces-stock-split-on-ai-demand",
-     "memo": "분할 후 발행주식수는 닛케이 기준"
+     "after": 567387652,
+     "source": "https://www.ibiden.co.jp/ir/stock/stock-basick-data/",
+     "memo": "분할 후 발행주식수는 회사 IR 공식치(2026.10.01 현재). 기존 닛케이 수치 567,325,239주 대비 +62,413주(차이 사유 확인 중, 9월 CB 전환분 반영 시점 차이 가능성)"
     }
    ],
    "note": "엑셀 567,260천주는 분할 전 주식수(약 2억8,363만주)×2로 계산한 근사치로 보입니다."
